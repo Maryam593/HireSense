@@ -1,9 +1,9 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from pymongo import MongoClient
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
 import os
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 app = FastAPI()
 
@@ -40,3 +40,10 @@ def list_files():
         return JSONResponse(content={"files": files})
     except FileNotFoundError:
         return JSONResponse(content={"error": "Folder not found"}, status_code=404)
+    
+@app.get("/download-file")
+async def download_file(filename: str):
+    file_path = f"data/{filename}"
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(file_path, filename=filename)
