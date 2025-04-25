@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import './App.css';
+import axios from 'axios';
 
 function App() {
   const [files, setFiles] = useState<File[]>([]);
@@ -10,6 +11,26 @@ function App() {
       setFiles(Array.from(selectedFiles)); // Convert FileList to array
     }
   };
+
+  const handleSubmit = async () => {
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("file", file); // 👈 match this key with UploadFile = File(...) in FastAPI
+    });
+  
+    try {
+      const response = await axios.post("http://localhost:8000/uploadfile", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+  
+      console.log("Upload successful:", response.data);
+    } catch (error) {
+      console.error("Upload error:", error);
+    }
+  };
+  
 
   const fileTypeIcons: { [key: string]: string } = {
     pdf: '📕',
@@ -31,15 +52,7 @@ function App() {
 
       <label
         htmlFor='file-upload'
-        className='
-          h-60 w-96
-          border-2 border-dashed border-gray-400
-          bg-white rounded-lg shadow-md
-          flex items-center justify-center flex-col
-          transition duration-300
-          hover:border-blue-500 hover:bg-blue-50
-          cursor-pointer text-center
-        '
+        className='h-60 w-96 border-2 border-dashed border-gray-400 bg-white rounded-lg shadow-md flex items-center justify-center flex-col transition duration-300 hover:border-blue-500 hover:bg-blue-50 cursor-pointer text-center'
       >
         <p className='text-gray-500 text-lg mb-2'>Drag & Drop your files here</p>
         <span className='text-sm text-blue-600'>or click to browse</span>
@@ -55,10 +68,7 @@ function App() {
       {files.length > 0 && (
         <div className='mt-6 w-full max-w-md space-y-4'>
           {files.map((file, index) => (
-            <div
-              key={index}
-              className='bg-white border rounded-md shadow-sm p-4 flex items-center gap-4'
-            >
+            <div key={index} className='bg-white border rounded-md shadow-sm p-4 flex items-center gap-4'>
               <span className='text-2xl'>{getFileIcons(file.type)}</span>
               <div>
                 <p className='font-medium'>{file.name}</p>
@@ -68,8 +78,15 @@ function App() {
           ))}
 
           <div className='bg-green-200 text-green-900 text-center p-3 rounded font-semibold'>
-            {files.length} file{files.length > 1 ? 's' : ''} uploaded successfully!
+            {files.length} file{files.length > 1 ? 's' : ''} selected.
           </div>
+
+          <button
+            onClick={handleSubmit}
+            className='w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700 transition'
+          >
+            Submit Files
+          </button>
         </div>
       )}
     </div>
