@@ -1,4 +1,5 @@
 import os
+import time
 import chromadb
 import re
 import smtplib
@@ -8,10 +9,13 @@ from llama_index.embeddings.gemini import GeminiEmbedding
 from llama_index.llms.gemini import Gemini
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from dotenv import load_dotenv
 import urllib3
-
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+load_dotenv() 
+google_api = os.environ.get("GOOGLE_API_KEY")
+job_skills = ["Python", "React", "JavaScript", "SQL", "Django", "AWS", "Git", "HTML", "CSS"]
 
 def evaluate_resumes_and_send_emails():
     """
@@ -20,7 +24,7 @@ def evaluate_resumes_and_send_emails():
 
     Args:
         resumes_folder (str): The path to the folder containing the resume files (e.g., "./resumes").
-        your_email (str): Your email address to send emails from (e.g., "hiring_manager@example.com").
+        your_email (str): Your email address to send emails from (e.g., "hiring_manager@gmail.com").
         your_app_password (str): A special password you generate for apps to access your email
             (check your email provider's settings).
         job_skills (list, optional): A list of important skills for the job.
@@ -28,14 +32,6 @@ def evaluate_resumes_and_send_emails():
         google_api (str, optional): Your Google API key. If you don't provide it here,
             the code will try to find it in your computer's settings.
     """
-    os.environ["GOOGLE_API_KEY"] = "AIzaSyCNhtdE7xIf6BbeLhej-QSOSzgvfEJ8CGQ"
-    if google_api is None:
-        google_api = os.environ.get("GOOGLE_API_KEY")
-        if not google_api:
-            raise ValueError("Please set the GOOGLE_API_KEY as an environment variable.")
-
-    if job_skills is None:
-        job_skills = ["Python", "React", "JavaScript", "SQL", "Django", "AWS", "Git", "HTML", "CSS"]
 
     # --- Step 1: Read the resumes ---
     documents = SimpleDirectoryReader("./data").load_data()
@@ -48,8 +44,7 @@ def evaluate_resumes_and_send_emails():
     resume_database = client.get_or_create_collection("resume_analysis")
     vector_store = ChromaVectorStore(chroma_collection=resume_database)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
-    index = VectorStoreIndex.from_documents(documents, storage_context=storage_context,
-                                           embed_model=embedding_model)
+    index = VectorStoreIndex.from_documents(documents, storage_context=storage_context,embed_model=embedding_model)
 
     # --- Step 4: Define how the AI should evaluate each resume ---
     evaluation_prompt = PromptTemplate(
@@ -116,7 +111,6 @@ def evaluate_resumes_and_send_emails():
 
     # --- Step 7: Go through each resume, evaluate it, and send an email ---
     for document in documents:
-        # Create a temporary way to query just this single resume
         single_resume_index = VectorStoreIndex.from_documents([document],
                                                             embed_model=embedding_model)
         single_resume_query_engine = single_resume_index.as_query_engine(
@@ -139,7 +133,7 @@ def evaluate_resumes_and_send_emails():
             skills_result = single_resume_query_engine.query(skills_query)
             found_skills = re.findall(r"\b(" + "|".join(job_skills) + r")\b",
                                      str(skills_result), re.IGNORECASE)
-            found_skills = list(set(found_skills))  # Remove duplicates
+            found_skills = list(set(found_skills)) 
 
             matching_skills = [
                 skill for skill in found_skills if skill.lower() in [js.lower() for js in job_skills]]
@@ -163,7 +157,7 @@ The Hiring Team
 """
             elif len(matching_skills) > 0:
                 suitability = "Suitable"
-                email_subject = "Your Application for Software Engineer - Next Steps"
+                email_subject = "Your Application for Software Engineer - Waiting List"
                 email_body = f"""
 Dear Candidate,
 
@@ -196,14 +190,11 @@ Sincerely,
 The Hiring Team
 """
 
-            print(f"Suitability: {suitability}")
+            print(f"Suitability: {suitability}, email_body: {email_body}")
             email_sender.send(candidate_email, email_subject, email_body)
 
         else:
             print("Could not find a valid email address in the resume.")
     
 
-    #  Set GOOGLE_API_KEY as an environment variable as explained earlier.
-    #  You do NOT need to hardcode it here.
 
-    evaluate_resumes_and_send_emails()

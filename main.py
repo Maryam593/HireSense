@@ -23,15 +23,25 @@ print("connected")
 db = client['file_database']
 collection = db['files']
 os.makedirs("data", exist_ok=True) 
+
 @app.post("/uploadfile")
-async def create_upload_file(file: UploadFile = File(...)):
-    file_location = f"data/{file.filename}" 
-    with open(file_location, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+async def create_upload_file(files: List[UploadFile] = File(...)):
+    os.makedirs("data", exist_ok=True)  
+    saved_files_info = []
+    for file in files: 
+        file_location = f"data/{file.filename}"
+        with open(file_location, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+        collection.insert_one({
+            "filename": file.filename,
+            "location": file_location
+        })
+        saved_files_info.append({
+            "filename": file.filename,
+            "location": file_location
+        })
 
-    collection.insert_one({"filename": file.filename, "location": file_location})
-
-    return {"filename": file.filename, "location": file_location}
+    return {"uploaded_files": saved_files_info}
 
 #connect to collab
 @app.get("/list-files")

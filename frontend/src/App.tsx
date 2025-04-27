@@ -14,25 +14,26 @@ const App = () => {
     }
   }, []);
 
-  const handleSubmit = useCallback(async () => {
-    const formData = new FormData();
-    files.forEach((file) => {
-      formData.append('file', file);
-    });
+ const handleSubmit = useCallback(async () => {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
 
-    try {
-      const response = await axios.post('http://localhost:8000/uploadfile', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      console.log('Upload successful:', response.data);
-      setFiles([]);
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      alert(`File upload failed: ${error.message || 'An error occurred'}`);
-    }
-  }, [files]);
+  try {
+    const response = await axios.post('http://localhost:8000/uploadfile', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    console.log('Upload successful:', response.data);
+    setFiles([]);
+  } catch (error: any) {
+    console.error('Upload error:', error);
+    alert(`File upload failed: ${error.message || 'An error occurred'}`);
+  }
+}, [files]);
+
 
   const handleDelete = useCallback((filename: string) => {
     setFiles(prevFiles => prevFiles.filter(file => file.name !== filename));
