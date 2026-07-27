@@ -2,6 +2,8 @@ import React, { useState, useCallback } from 'react';
 import './App.css';
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 const App = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [evaluationResult, setEvaluationResult] = useState<string | null>(null);
@@ -21,7 +23,7 @@ const App = () => {
   });
 
   try {
-    const response = await axios.post('http://localhost:8000/uploadfile', formData, {
+    const response = await axios.post(`${API_BASE_URL}/uploadfile`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -42,7 +44,7 @@ const App = () => {
   const handleEvaluate = async () => {
   
     try {
-      const response = await axios.post('http://localhost:8000/evaluate-resumes',);
+      const response = await axios.post(`${API_BASE_URL}/evaluate-resumes`);
       console.log('Evaluation successful:', response.data);
       setEvaluationResult(response.data.message);
     } catch (error: any) {

@@ -19,16 +19,22 @@ def safe_data_path(filename: str) -> str:
         raise HTTPException(status_code=400, detail="Invalid filename")
     return candidate
 
+allowed_origins = [
+    origin.strip()
+    for origin in os.environ.get("FRONTEND_ORIGINS", "http://localhost:5173").split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # React ka origin
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # MongoDB se connect ho rahe hain
-client = MongoClient("mongodb://localhost:27017/")
+client = MongoClient(os.environ.get("MONGO_URI", "mongodb://localhost:27017/"))
 print("connected")
 db = client['file_database']
 collection = db['files']
