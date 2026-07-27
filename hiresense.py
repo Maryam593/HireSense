@@ -36,7 +36,7 @@ def evaluate_resumes_and_send_emails():
     # --- Step 1: Read the resumes ---
     documents = SimpleDirectoryReader("./data").load_data()
     print(f"{len(documents)} resume(s) found in ''.")
-    embedding_model = GeminiEmbedding(model_name="models/embedding-001", api_key=google_api)
+    embedding_model = GeminiEmbedding(model_name="models/gemini-embedding-001", api_key=google_api)
 
     # This is the main AI model that reads and understands the resumes
     language_model = Gemini(model_name="models/gemini-2.0-flash", api_key=google_api)
