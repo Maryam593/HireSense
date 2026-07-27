@@ -87,8 +87,6 @@ def evaluate_resumes_and_send_emails():
             self.password = password
             self.smtp_server = "smtp.gmail.com"
             self.smtp_port = 587
-            #your_email = "connect2meryem@gmail.com"
-            #your_app_password= "xjnt bfow kdgd xdfa"
 
         def send(self, recipient, subject, body):
             try:
@@ -107,7 +105,9 @@ def evaluate_resumes_and_send_emails():
             except Exception as e:
                 print(f"Error sending email to {recipient}: {e}")
          
-    email_sender = EmailSender("connect2meryem@gmail.com", "xjnt bfow kdgd xdfa")
+    sender_email = os.environ.get("SENDER_EMAIL")
+    sender_app_password = os.environ.get("SENDER_APP_PASSWORD")
+    email_sender = EmailSender(sender_email, sender_app_password) if sender_email and sender_app_password else None
 
     # --- Step 7: Go through each resume, evaluate it, and send an email ---
     for document in documents:
@@ -191,7 +191,10 @@ The Hiring Team
 """
 
             print(f"Suitability: {suitability}, email_body: {email_body}")
-            email_sender.send(candidate_email, email_subject, email_body)
+            if email_sender:
+                email_sender.send(candidate_email, email_subject, email_body)
+            else:
+                print("Email not sent: SENDER_EMAIL/SENDER_APP_PASSWORD not configured.")
 
         else:
             print("Could not find a valid email address in the resume.")

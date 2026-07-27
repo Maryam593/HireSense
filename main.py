@@ -9,6 +9,16 @@ from fastapi.responses import FileResponse, JSONResponse
 
 app = FastAPI()
 
+DATA_DIR = os.path.abspath("data")
+
+
+def safe_data_path(filename: str) -> str:
+    """Resolve filename against DATA_DIR, rejecting any path traversal attempt."""
+    candidate = os.path.abspath(os.path.join(DATA_DIR, os.path.basename(filename)))
+    if not candidate.startswith(DATA_DIR + os.sep):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    return candidate
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],  # React ka origin
@@ -28,8 +38,8 @@ os.makedirs("data", exist_ok=True)
 async def create_upload_file(files: List[UploadFile] = File(...)):
     os.makedirs("data", exist_ok=True)  
     saved_files_info = []
-    for file in files: 
-        file_location = f"data/{file.filename}"
+    for file in files:
+        file_location = safe_data_path(file.filename)
         with open(file_location, "wb") as f:
             shutil.copyfileobj(file.file, f)
         collection.insert_one({
@@ -55,16 +65,16 @@ def list_files():
     
 @app.get("/download-file")
 async def download_file(filename: str):
-    file_path = f"data/{filename}"
+    file_path = safe_data_path(filename)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(file_path, filename=filename)
+    return FileResponse(file_path, filename=os.path.basename(filename))
 
-#for deleting 
+#for deleting
 @app.delete("/delete-file")
 async def delete_file(filename: str):
-    file_path = f'./data/{filename}'  # Adjust the path based on where your files are stored
-    
+    file_path = safe_data_path(filename)
+
     # Check if the file exists
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
