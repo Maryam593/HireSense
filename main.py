@@ -59,6 +59,39 @@ async def create_upload_file(files: List[UploadFile] = File(...)):
 
     return {"uploaded_files": saved_files_info}
 
+@app.get("/debug-mongo")
+def debug_mongo():
+    import socket, ssl, time
+    host = os.environ.get("MONGO_URI", "").split("@")[-1].split("/")[0].split(",")[0] or "ac-zpx2nta-shard-00-00.zohxkil.mongodb.net"
+    results = {"openssl_version": ssl.OPENSSL_VERSION, "target_host": host}
+
+    try:
+        ctx = ssl.create_default_context()
+        start = time.time()
+        with socket.create_connection((host, 27017), timeout=10) as sock:
+            with ctx.wrap_socket(sock, server_hostname=host) as ssock:
+                results["raw_tls_default"] = {"ok": True, "version": ssock.version(), "elapsed": time.time() - start}
+    except Exception as e:
+        results["raw_tls_default"] = {"ok": False, "error": str(e)}
+
+    try:
+        ctx2 = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ctx2.minimum_version = ssl.TLSVersion.TLSv1_2
+        ctx2.maximum_version = ssl.TLSVersion.TLSv1_2
+        with socket.create_connection((host, 27017), timeout=10) as sock:
+            with ctx2.wrap_socket(sock, server_hostname=host) as ssock:
+                results["raw_tls_forced_1_2"] = {"ok": True, "version": ssock.version()}
+    except Exception as e:
+        results["raw_tls_forced_1_2"] = {"ok": False, "error": str(e)}
+
+    try:
+        result = client.admin.command("ping")
+        results["pymongo_ping"] = {"ok": True, "result": result}
+    except Exception as e:
+        results["pymongo_ping"] = {"ok": False, "error": str(e)}
+
+    return results
+
 #connect to collab
 @app.get("/list-files")
 def list_files():
