@@ -7,14 +7,16 @@ from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, StorageCon
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.embeddings.gemini import GeminiEmbedding
 from llama_index.llms.gemini import Gemini
+from llama_index.llms.groq import Groq
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-load_dotenv() 
+load_dotenv()
 google_api = os.environ.get("GOOGLE_API_KEY")
+groq_api = os.environ.get("GROQ_API_KEY")
 job_skills = ["Python", "React", "JavaScript", "SQL", "Django", "AWS", "Git", "HTML", "CSS"]
 
 def evaluate_resumes_and_send_emails():
@@ -39,7 +41,10 @@ def evaluate_resumes_and_send_emails():
     embedding_model = GeminiEmbedding(model_name="models/gemini-embedding-001", api_key=google_api)
 
     # This is the main AI model that reads and understands the resumes
-    language_model = Gemini(model_name="models/gemini-2.0-flash", api_key=google_api)
+    if groq_api:
+        language_model = Groq(model="llama-3.3-70b-versatile", api_key=groq_api)
+    else:
+        language_model = Gemini(model_name="models/gemini-2.5-flash", api_key=google_api)
     client = chromadb.Client()
     resume_database = client.get_or_create_collection("resume_analysis")
     vector_store = ChromaVectorStore(chroma_collection=resume_database)
