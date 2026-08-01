@@ -44,7 +44,7 @@ def evaluate_resumes_and_send_emails():
     if groq_api:
         language_model = Groq(model="llama-3.3-70b-versatile", api_key=groq_api)
     else:
-        language_model = Gemini(model_name="models/gemini-2.5-flash", api_key=google_api)
+        language_model = Gemini(model_name="models/gemini-flash-latest", api_key=google_api)
     client = chromadb.Client()
     resume_database = client.get_or_create_collection("resume_analysis")
     vector_store = ChromaVectorStore(chroma_collection=resume_database)
