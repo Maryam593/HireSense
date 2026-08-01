@@ -84,7 +84,7 @@ def evaluate_resumes_and_send_emails():
     query_engine = index.as_query_engine(llm=language_model, prompt_template=evaluation_prompt, similarity_top_k=3)
 
     # --- Step 6: Class to handle sending emails ---
-    # Uses the Resend HTTP API instead of raw SMTP, since Render blocks
+    # Uses the SendGrid HTTP API instead of raw SMTP, since Render blocks
     # outbound SMTP connections on its web services.
     class EmailSender:
         def __init__(self, sender_email, api_key):
@@ -94,13 +94,13 @@ def evaluate_resumes_and_send_emails():
         def send(self, recipient, subject, body):
             try:
                 response = requests.post(
-                    "https://api.resend.com/emails",
+                    "https://api.sendgrid.com/v3/mail/send",
                     headers={"Authorization": f"Bearer {self.api_key}"},
                     json={
-                        "from": self.sender_email,
-                        "to": [recipient],
+                        "personalizations": [{"to": [{"email": recipient}]}],
+                        "from": {"email": self.sender_email},
                         "subject": subject,
-                        "text": body,
+                        "content": [{"type": "text/plain", "value": body}],
                     },
                     timeout=15,
                 )
@@ -109,11 +109,10 @@ def evaluate_resumes_and_send_emails():
             except Exception as e:
                 print(f"Error sending email to {recipient}: {e}")
 
-    resend_api_key = os.environ.get("RESEND_API_KEY")
-    # onboarding@resend.dev works out of the box without domain verification,
-    # but Resend only lets it deliver to the account's own signup email.
-    sender_email = os.environ.get("RESEND_FROM_EMAIL", "onboarding@resend.dev")
-    email_sender = EmailSender(sender_email, resend_api_key) if resend_api_key else None
+    sendgrid_api_key = os.environ.get("SENDGRID_API_KEY")
+    # Must be an email verified in SendGrid under Settings -> Sender Authentication -> Single Sender Verification.
+    sender_email = os.environ.get("SENDGRID_FROM_EMAIL")
+    email_sender = EmailSender(sender_email, sendgrid_api_key) if sendgrid_api_key and sender_email else None
 
     # --- Step 7: Go through each resume, evaluate it, and send an email ---
     for document in documents:
@@ -200,7 +199,7 @@ The Hiring Team
             if email_sender:
                 email_sender.send(candidate_email, email_subject, email_body)
             else:
-                print("Email not sent: RESEND_API_KEY not configured.")
+                print("Email not sent: SENDGRID_API_KEY/SENDGRID_FROM_EMAIL not configured.")
 
         else:
             print("Could not find a valid email address in the resume.")
