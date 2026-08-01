@@ -138,6 +138,15 @@ def evaluate_resumes_and_send_emails():
 
         # Try to find the candidate's email address in the resume text
         email_matches = re.findall(r"[\w\.-]+@[\w\.-]+\.\w+", document.text)
+        if not email_matches:
+            # Some PDF exports (e.g. certain design-tool templates) render text with a
+            # space inserted between every character, breaking the regex above.
+            spaced_match = re.search(
+                r"([a-zA-Z]\s?){2,40}@\s?([\w.]\s?){1,40}\.\s?([a-zA-Z]\s?){2,4}",
+                document.text,
+            )
+            if spaced_match:
+                email_matches = [re.sub(r"\s+", "", spaced_match.group(0))]
         candidate_email = email_matches[0] if email_matches else None
 
         if candidate_email:
