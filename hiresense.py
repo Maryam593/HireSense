@@ -179,52 +179,57 @@ def evaluate_resumes_and_send_emails():
 
             if len(matching_skills) == len(job_skills):
                 suitability = "Highly Suitable"
-                email_subject = "Congratulations! You're a Great Fit for Our Software Engineer Role"
+                email_subject = "🎉 You're a Strong Match for the Software Engineer Role"
                 email_body = f"""
-Dear Candidate,
+Hey there,
 
-We are very impressed with your resume and believe your skills and experience align well with the
-requirements for our Associate Software Engineer role. We would like to invite you for the next step
-in our hiring process.
+Good news — we ran your resume against what we're actually looking for, and you're checking every
+box for the Associate Software Engineer role. That's a genuinely strong fit.
 
-We will be in touch soon with more details.
+We'd like to move you forward to the next step. Someone will follow up shortly with details, no
+vague "we'll be in touch" energy here.
 
-Best regards,
-The Hiring Team
+Nice resume. Talk soon.
+
+- The Hiring Team (powered by HireSense)
 """
             elif len(matching_skills) > 0:
                 suitability = "Suitable"
-                email_subject = "Your Application for Software Engineer - Waiting List"
+                email_subject = "Your Application: Here's Exactly Where You Stand"
                 email_body = f"""
-Dear Candidate,
+Hey there,
 
-Thank you for your interest in the Associate Software Engineer role. Your resume shows some promising
-skills, including: {', '.join(matching_skills)}.
+Thanks for applying for the Associate Software Engineer role. Instead of leaving you guessing, here's
+the real breakdown of how your resume matched up:
 
-We are currently reviewing applications and will be in touch if your profile is selected for the next stage.
+✅ What's already working for you: {', '.join(matching_skills)}
+📌 What would strengthen your profile: {', '.join(missing_skills)}
 
-For your reference, some of the key skills we are looking for include: {', '.join(missing_skills)}.
-You may want to highlight any experience you have in these areas in future applications.
+You're in the running, not a lock yet. Investing some time in the skills above would genuinely move
+the needle, for this role or your next application anywhere.
 
-Best regards,
-The Hiring Team
+We'll keep evaluating and follow up if it's a fit on our end.
+
+Rooting for you,
+The Hiring Team (powered by HireSense)
 """
             else:
                 suitability = "Not Suitable"
-                email_subject = "Update on Your Application for Software Engineer"
+                email_subject = "Your Application: Honest Feedback Inside"
                 email_body = f"""
-Dear Candidate,
+Hey there,
 
-Thank you for your application for the Associate Software Engineer role. After careful review, we have
-decided not to move forward with your application at this time.
+Thanks for taking the time to apply for the Associate Software Engineer role. Being upfront: based on
+your resume as it stands, we're not moving forward for this specific role.
 
-For future applications, we recommend focusing on developing skills in areas such as:
-{', '.join(missing_skills)}.
+Here's what most companies won't bother telling you: the skills that would make the biggest difference
+for a role like this are: {', '.join(missing_skills)}.
 
-We wish you the best in your job search.
+That's not a verdict on you, it's a gap map. Close a few of these and your next application hits
+different, here or anywhere else.
 
-Sincerely,
-The Hiring Team
+Good luck out there,
+The Hiring Team (powered by HireSense)
 """
 
             print(f"Suitability: {suitability}, email_body: {email_body}")
