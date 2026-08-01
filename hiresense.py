@@ -2,14 +2,12 @@ import os
 import time
 import chromadb
 import re
-import smtplib
+import requests
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, StorageContext, PromptTemplate
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.embeddings.gemini import GeminiEmbedding
 from llama_index.llms.gemini import Gemini
 from llama_index.llms.groq import Groq
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -86,33 +84,36 @@ def evaluate_resumes_and_send_emails():
     query_engine = index.as_query_engine(llm=language_model, prompt_template=evaluation_prompt, similarity_top_k=3)
 
     # --- Step 6: Class to handle sending emails ---
+    # Uses the Resend HTTP API instead of raw SMTP, since Render blocks
+    # outbound SMTP connections on its web services.
     class EmailSender:
-        def __init__(self, sender_email, password):
+        def __init__(self, sender_email, api_key):
             self.sender_email = sender_email
-            self.password = password
-            self.smtp_server = "smtp.gmail.com"
-            self.smtp_port = 587
+            self.api_key = api_key
 
         def send(self, recipient, subject, body):
             try:
-                server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-                server.starttls()
-                server.login(self.sender_email, self.password)
-
-                message = MIMEMultipart()
-                message["From"] = self.sender_email
-                message["To"] = recipient
-                message["Subject"] = subject
-                message.attach(MIMEText(body, "plain"))
-                server.sendmail(self.sender_email, recipient, message.as_string())
-                server.quit()
+                response = requests.post(
+                    "https://api.resend.com/emails",
+                    headers={"Authorization": f"Bearer {self.api_key}"},
+                    json={
+                        "from": self.sender_email,
+                        "to": [recipient],
+                        "subject": subject,
+                        "text": body,
+                    },
+                    timeout=15,
+                )
+                response.raise_for_status()
                 print(f"Email sent to {recipient}")
             except Exception as e:
                 print(f"Error sending email to {recipient}: {e}")
-         
-    sender_email = os.environ.get("SENDER_EMAIL")
-    sender_app_password = os.environ.get("SENDER_APP_PASSWORD")
-    email_sender = EmailSender(sender_email, sender_app_password) if sender_email and sender_app_password else None
+
+    resend_api_key = os.environ.get("RESEND_API_KEY")
+    # onboarding@resend.dev works out of the box without domain verification,
+    # but Resend only lets it deliver to the account's own signup email.
+    sender_email = os.environ.get("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+    email_sender = EmailSender(sender_email, resend_api_key) if resend_api_key else None
 
     # --- Step 7: Go through each resume, evaluate it, and send an email ---
     for document in documents:
@@ -199,7 +200,7 @@ The Hiring Team
             if email_sender:
                 email_sender.send(candidate_email, email_subject, email_body)
             else:
-                print("Email not sent: SENDER_EMAIL/SENDER_APP_PASSWORD not configured.")
+                print("Email not sent: RESEND_API_KEY not configured.")
 
         else:
             print("Could not find a valid email address in the resume.")

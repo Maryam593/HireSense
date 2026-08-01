@@ -3,6 +3,7 @@ uvicorn[standard]
 python-multipart
 pymongo
 python-dotenv
+requests
 chromadb
 llama-index
 llama-index-vector-stores-chroma
