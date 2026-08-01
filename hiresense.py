@@ -45,7 +45,7 @@ def evaluate_resumes_and_send_emails():
         language_model = Groq(model="llama-3.3-70b-versatile", api_key=groq_api)
     elif openrouter_api:
         language_model = OpenAILike(
-            model="meta-llama/llama-3.1-8b-instruct:free",
+            model="openai/gpt-oss-20b:free",
             api_base="https://openrouter.ai/api/v1",
             api_key=openrouter_api,
             is_chat_model=True,
