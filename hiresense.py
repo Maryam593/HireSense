@@ -8,6 +8,7 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.embeddings.gemini import GeminiEmbedding
 from llama_index.llms.gemini import Gemini
 from llama_index.llms.groq import Groq
+from llama_index.llms.openai_like import OpenAILike
 from dotenv import load_dotenv
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -15,6 +16,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 load_dotenv()
 google_api = os.environ.get("GOOGLE_API_KEY")
 groq_api = os.environ.get("GROQ_API_KEY")
+openrouter_api = os.environ.get("OPENROUTER_API_KEY")
 job_skills = ["Python", "React", "JavaScript", "SQL", "Django", "AWS", "Git", "HTML", "CSS"]
 
 def evaluate_resumes_and_send_emails():
@@ -41,6 +43,14 @@ def evaluate_resumes_and_send_emails():
     # This is the main AI model that reads and understands the resumes
     if groq_api:
         language_model = Groq(model="llama-3.3-70b-versatile", api_key=groq_api)
+    elif openrouter_api:
+        language_model = OpenAILike(
+            model="meta-llama/llama-3.1-8b-instruct:free",
+            api_base="https://openrouter.ai/api/v1",
+            api_key=openrouter_api,
+            is_chat_model=True,
+            context_window=128000,
+        )
     else:
         language_model = Gemini(model_name="models/gemini-flash-latest", api_key=google_api)
     client = chromadb.Client()
