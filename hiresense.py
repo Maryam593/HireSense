@@ -141,12 +141,25 @@ def evaluate_resumes_and_send_emails():
         if not email_matches:
             # Some PDF exports (e.g. certain design-tool templates) render text with a
             # space inserted between every character, breaking the regex above.
-            spaced_match = re.search(
-                r"([a-zA-Z]\s?){2,40}@\s?([\w.]\s?){1,40}\.\s?([a-zA-Z]\s?){2,4}",
-                document.text,
-            )
-            if spaced_match:
-                email_matches = [re.sub(r"\s+", "", spaced_match.group(0))]
+            # If the email sits alone on its own line (bounded by real newlines),
+            # collapsing that line's spaces and requiring an exact full-line match
+            # lets us safely allow digits in the local part (e.g. "kinza1291555").
+            for line in document.text.split("\n"):
+                if "@" not in line:
+                    continue
+                collapsed = re.sub(r"\s+", "", line)
+                if re.fullmatch(r"[\w.-]+@[\w.-]+\.\w+", collapsed):
+                    email_matches = [collapsed]
+                    break
+            if not email_matches:
+                # No clean newline isolation - fall back to a stricter letters-only
+                # heuristic to avoid swallowing adjacent phone-number digits.
+                spaced_match = re.search(
+                    r"([a-zA-Z]\s?){2,40}@\s?([\w.]\s?){1,40}\.\s?([a-zA-Z]\s?){2,4}",
+                    document.text,
+                )
+                if spaced_match:
+                    email_matches = [re.sub(r"\s+", "", spaced_match.group(0))]
         candidate_email = email_matches[0] if email_matches else None
 
         if candidate_email:
