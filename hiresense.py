@@ -1,5 +1,6 @@
 import os
 import time
+import shutil
 import chromadb
 import re
 import requests
@@ -240,6 +241,15 @@ The Hiring Team (powered by HireSense)
 
         else:
             print("Could not find a valid email address in the resume.")
+
+    # Move processed resumes out of ./data so a repeat call to this function
+    # doesn't re-evaluate and re-email the same candidates.
+    processed_dir = os.path.join("./data", "processed")
+    os.makedirs(processed_dir, exist_ok=True)
+    for fname in os.listdir("./data"):
+        src = os.path.join("./data", fname)
+        if os.path.isfile(src):
+            shutil.move(src, os.path.join(processed_dir, fname))
     
 
 
